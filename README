@@ -1,0 +1,236 @@
+###############################################################################
+
+                 Xilinx QDMA Software README
+
+###############################################################################
+
+
+_____________________________________________________________________________
+Contents
+
+1.   Installation
+     1.1. Directory and file description
+     1.2   Compiling the QDMA Software
+     1.3   Installing the compiled binaries
+     1.4   Loading the Kernel module
+2    Configuration
+     2.1   Configuring QDMA Queues
+3.   Xilinx "dmactl" Command-line Utility
+_____________________________________________________________________________
+
+1. Installation:
+
+
+  The files in this directory provide Xilinx PCIe Multi-Queue DMA (QDMA) driver,
+  example software, and example test & debug scripts that can be used to
+  exercise the Xilinx QDMA IP. This software can be used directly or referenced
+  to create drivers and software for your Xilinx FPGA hardware designe.
+
+
+  1.1. Directory and file description:
+  ------------------------------------
+  - drv/ and libqdma/:
+    These directories contain the Xilinx PCIe QDMA kernel module driver files
+  - user/cli/:
+    This directory contains the user space tool "dmactl" to administrate the 
+    queues.
+  - include/:
+    This directory contains the header files common to both kernel drive and the
+    user space tool.
+  - user/bash/:
+    This directory contains the sample scripts to decode the various queue
+    context for debug purposes.
+    - qdma_run_test.sh : scripts to test basic AIX-MM and AXI-ST tranfers for PF's
+    - qdma_run_test_mm_vf.sh : script to test baisc AXI-MM transfer for VF's
+    This directory also has sample run scripts to test AXI-MM and AXI-St transfer.
+  - tool/:
+    This directory contains example application software to exercise the kernel
+    module and Xilinx PCIe QMMA IP.
+  - etc/:
+    This directory contains the udev rules for the character devices exported by
+    the kernel module.
+
+   
+
+  1.2 Compiling the QDMA Software:
+  --------------------------------
+
+  In order to compile the Xilinx QDMA software, a configured and compiled 
+  Linux kernel source tree is required. The source tree may be only compiled 
+  header files, or a complete tree. The source tree needs to be configured
+  and the header files need to be compiled. And, the Linux kernel must be
+  configured to use  modules.
+
+  Additionally, the /lib/modules must have been set up for this particular 
+  kernel 
+  (i.e. "make modules_install" has been run with the Linux kernel source tree).
+
+  a.	Untar the Xilinx QDMA Linux driver package.
+
+  b.	Compile the Xilinx QDMA Linux driver:
+
+  	[xilinx@]# make
+
+	a sub-directory build/ will be created as a result of running "make".  
+
+	By default, both PF driver (qdma.ko) and VF driver (qdma_vf.ko) will
+	be compiled.
+
+	If only PF driver is desired:
+  	[xilinx@]# make pf
+
+	If only VF driver is desired:
+  	[xilinx@]# make vf
+
+
+  1.3 Installing the compiled binaries:
+  -------------------------------------
+
+  To install the QDMA software, the installer must be the root user, then
+  run "make install".
+
+  [xilinx@]# make install
+
+  The QDMA module will be installed in the 
+  /lib/modules/<linux_kernel_version>/updates/kernel/drivers/qdma directory.  
+
+  The dmactl tool will be installed in /user/local/sbin.  
+
+
+  
+  1.4 Loading the Kernel module:
+  --------------------------------
+
+  To load the module run modprobe as follows:
+
+  [root@]# modprobe qdma
+
+  Or on a VM:
+  [root@]# modprobe qdma_vf
+  
+  Now the QDMA software is ready for use.
+
+
+
+2. Configuration 
+
+  2.1 Configuring Queues
+  -------------------------------------
+
+  To configure a QDMA queue, there are three minimum required parameters 
+  (in the form of key value pairs) needed to be configured. 
+
+       idx <N>:	        The 0-based queue index on the function.
+       mode <mm | st>:  queue mode, default to "mm"
+       dir <h2c | c2h>: queue direction, default to "h2c"
+
+  - "idx" is a 0-based unique index on the function. 
+	With the 2018.1 release, the range is 0 ~ 31 on a physical function and
+	0 ~ 7 on a virtual function
+
+  - "mode" is the operation mode of the queue.
+	It is either memory mapped (mm) or streaming mode (st)
+
+  - "dir" is the direction of the queue.
+	It is either host to card (h2c) or card to host (c2h).
+
+  A h2c queue and a c2h queue can share the same index. In other word, a index
+  represents a pair of queues: one on h2c direction and the other on the c2h
+  direction.
+
+  
+4. Xilinx "dmactl" Command-line Configuration Utility:
+
+  The Xilinx QDMA control tool, dmactl, is a Command Line utility 
+  which is installed in /usr/local/sbin/ and allows administration of the
+  Xilinx QDMA queues. It can perform the following functions:
+
+  - query the qdma functions/devices the driver has bind into.
+
+  - list all of the queues on a device/function
+  - add/configure a new queues on a device/function
+  - start an already added/configured queue (i.e., bring the queue online)
+  - stop an started queue (i.e., bring the queue offline)
+  - delete an already added/configured queue
+
+  register access:
+  - read a register
+  - write a register
+  - dump the qdma config. bar and user bar registers
+
+  debug helper
+  - display a queue's configuration parameters
+  - display a queue's descriptor ring entries
+  - display a ch2 queue's completion ring entries
+
+  For help run:
+    dmactl -h
+
+  6.1 Using dmactl for query the QDMA devices/functions
+  -------------------------------------
+
+  Please refer User Guide to find all options and parameters available.
+
+    1. Get the list of devices the driver has bind with
+    
+      [root@]# dmactl dev list
+
+	qdma0	0000:01:00.0	max QP: 32
+	qdma1	0000:01:00.1	max QP: 32
+
+      The above example output shows 2 QDMA functions/devices:
+      One is at pci BDF: 01:00.0
+      The other is at pci BDF: 01:00.1
+
+  
+  6.2 Using dmactl for Queue control
+  -------------------------------------
+
+    1. Add/Configure a queue
+
+      To add a MM H2C queue on qdma0 (i.e., pci BDF 01:00.0) in the above
+      example:
+
+      [root@]# dmactl qdma0 q add idx 0 mode mm dir h2c
+
+      *A character device "/dev/qdma0-MM-H2C-0" would be created by the driver.
+
+      To add a MM C2H queue on qdma0:
+
+      [root@]# dmactl qdma0 q add idx 0 mode mm dir c2h
+
+      *A character device /dev/qdma0-MM-C2H-0 would be created.
+
+    2. Start an added queue
+
+      To start the MM H2C queue on qdma0 added in the previous example:
+
+      [root@]# dmactl qdma0 q start idx 0 dir h2c
+
+      *After the queue is started the normal read and write operation can be
+       performed on the character device "/dev/qdma0-MM-H2C-0".
+
+
+      To start the MM C2H queue on qdma0 added in the previous example:
+
+      [root@]# dmactl qdma0 q start idx 0 dir c2h
+
+      *After the queue is started the normal read and write operation can be
+       performed on the character device "/dev/qdma0-MM-C2H-0".
+
+       The included tools under tools/ directory can be used to transfer data 
+       between the host and the newly started queues: "dma_to_device" is for the
+       H2C (host-to-chip) queues and "dma_from_device" is for the C2H (chip-to-
+       host) queues. 
+
+    3. Stop a queue
+
+      [root@]# dmactl qdma0 q start idx 0 dir h2c
+      [root@]# dmactl qdma0 q start idx 0 dir c2h
+
+
+    4. Delete a queue
+      
+      [root@]# dmactl qdma0 q del idx 0 dir h2c
+      [root@]# dmactl qdma0 q del idx 0 dir c2h
+

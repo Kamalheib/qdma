@@ -1,0 +1,5 @@
+KERNEL=="qdma[0-4]-MM-H2C-[0-9]*", MODE="0666"
+KERNEL=="qdma[0-4]-MM-C2H-[0-9]*", MODE="0666"
+KERNEL=="qdma[0-4]-ST-H2C-[0-9]*", MODE="0666"
+KERNEL=="qdma[0-4]-ST-C2H-[0-9]*", MODE="0666"
+
