@@ -125,7 +125,7 @@ endif
 .PHONY: eval.mak
 
 .PHONY: default
-default: user tools mod_pf mod_vf post
+default: user tools mod_pf post
 
 .PHONY: pf 
 pf: user mod_pf
