@@ -113,11 +113,7 @@ struct genl_ops xnl_ops[] = {
 };
 
 static struct genl_family xnl_family = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 	.id = 0,
-#else
-	.id = GENL_ID_GENERATE,
-#endif
 	.hdrsize = 0,
 #ifdef __QDMA_VF__
 	.name = XNL_NAME_VF,
