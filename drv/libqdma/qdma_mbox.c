@@ -133,6 +133,12 @@ static int mbox_read(struct xlnx_dma_dev *xdev, struct mbox_msg *m, int wait)
 			xdev->conf.name, MBOX_BASE, v);
 #endif
 
+	if (v) {
+		pr_info("%s:%d: MBOX_FN_STATUS v=%#x\n", __func__, __LINE__, v);
+		if (v == 0xffffffff)
+			return -EAGAIN;
+	}
+
 	if (!(v & M_MBOX_FN_STATUS_IN_MSG))
 		return -EAGAIN;
 
@@ -309,9 +315,12 @@ static void pf_mbox_clear_ack(struct xlnx_dma_dev *xdev)
 	if ((v & F_MBOX_FN_STATUS_ACK) == 0)
 		return;
 
+	pr_info("%s:%d: MBOX_FN_STATUS v=%#x\n", __func__, __LINE__, v);
+
 	for (i = 0; i < MBOX_PF_ACK_COUNT; i++, reg += MBOX_PF_ACK_STEP) {
 		u32 v = __read_reg(xdev, reg);
 
+		pr_info("%s:%d: MBOX_PF_ACK[%d] v=%#x\n", __func__, __LINE__, i, v);
 		if (!v)
 			continue;
 
@@ -506,7 +515,7 @@ void qdma_mbox_timer_start(struct xlnx_dma_dev *xdev)
 
         del_timer(timer);
         timer->function = qdma_mbox_proc;
-	timer->expires = HZ/10 + jiffies;	/* 1/10 s */
+	timer->expires = HZ * 5 + jiffies;	/* 1/10 s */
         add_timer(timer);
 }
 
